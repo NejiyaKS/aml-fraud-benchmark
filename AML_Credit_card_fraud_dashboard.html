@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adversarial ML in Fraud Detection — Attack &amp; Defense Benchmark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#e9edf5;
+    --bg-panel:#ffffff;
+    --bg-panel-2:#f2f5fa;
+    --border:#d7deea;
+    --text-primary:#161c2b;
+    --text-muted:#4b566d;
+    --text-dim:#7a869d;
+    --gold:#a9752b;
+    --green:#25865a;
+    --red:#c2432f;
+    --blue:#3459c9;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -5%, rgba(169,117,43,0.06), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(52,89,201,0.05), transparent),
+      var(--bg-void);
+    color:var(--text-primary);
+    font-family:'Inter',sans-serif;
+    font-size:17.5px;
+    line-height:1.55;
+    padding-bottom:60px;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:0 32px;}
+  a{color:inherit;}
+
+  /* ---- top bar ---- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px; border-bottom:1px solid var(--border);
+    max-width:1180px; margin:0 auto;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-family:'JetBrains Mono',monospace; font-size:17.5px; color:var(--text-muted); letter-spacing:0.04em;}
+  .brand-dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+  .topbar-right{font-family:'JetBrains Mono',monospace; font-size:17.5px; color:var(--text-dim);}
+
+  /* ---- hero ---- */
+  .hero{padding:64px 0 40px; border-bottom:1px solid var(--border);}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:17.5px; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--gold); margin-bottom:18px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:''; width:22px; height:1px; background:var(--gold);}
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:58px; line-height:1.06;
+    letter-spacing:-0.01em; max-width:820px; margin-bottom:22px;
+  }
+  h1 .accent{color:var(--gold);}
+  .hero-sub{font-size:19px; color:var(--text-muted); max-width:640px; margin-bottom:36px;}
+
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+  .stat{background:var(--bg-panel); padding:22px 24px;}
+  .stat-num{font-family:'JetBrains Mono',monospace; font-size:31px; font-weight:700; color:var(--text-primary);}
+  .stat-label{font-size:17.5px; color:var(--text-muted); margin-top:6px; text-transform:uppercase; letter-spacing:0.04em;}
+
+  /* ---- section shell ---- */
+  section{padding:56px 0;}
+  .section-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:10px;}
+  .section-num{font-family:'JetBrains Mono',monospace; font-size:17.5px; color:var(--text-dim); letter-spacing:0.08em;}
+  h2{font-family:'Space Grotesk',sans-serif; font-size:31px; font-weight:600; letter-spacing:-0.01em;}
+  .section-desc{color:var(--text-muted); font-size:17.5px; max-width:680px; margin-top:6px;}
+
+  /* ---- threat model cards ---- */
+  .tm-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .tm-card{background:var(--bg-panel); border:1px solid var(--border); border-radius:12px; padding:26px 28px;}
+  .tm-card h3{font-family:'Space Grotesk',sans-serif; font-size:20px; margin-bottom:12px; display:flex; align-items:center; gap:10px;}
+  .tm-tag{width:9px; height:9px; border-radius:2px; transform:rotate(45deg);}
+  .tm-card.evade .tm-tag{background:var(--red);}
+  .tm-card.poison .tm-tag{background:var(--blue);}
+  .tm-card p{color:var(--text-muted); font-size:15.5px; margin-bottom:14px;}
+  .formula{
+    font-family:'JetBrains Mono',monospace; font-size:17.5px; background:var(--bg-panel-2);
+    border:1px solid var(--border); border-radius:8px; padding:14px 16px; color:var(--gold);
+    overflow-x:auto; white-space:nowrap;
+  }
+  .tm-meta{display:flex; gap:18px; margin-top:16px; font-size:14px; color:var(--text-dim); flex-wrap:wrap;}
+  .tm-meta span b{color:var(--text-muted); font-weight:500;}
+
+  /* ---- chart panels ---- */
+  .panel{background:var(--bg-panel); border:1px solid var(--border); border-radius:12px; padding:28px; margin-bottom:20px;}
+  .panel-title{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; margin-bottom:4px;}
+  .panel-sub{font-size:17.5px; color:var(--text-muted); margin-bottom:18px;}
+
+  /* ---- static bar-chart rows (pure CSS/HTML, no JS or CDN dependency) ---- */
+  .bar-legend{display:flex; gap:20px; margin-bottom:18px;}
+  .bar-legend span{display:flex; align-items:center; gap:7px; font-size:17.5px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;}
+  .bar-legend i{width:10px; height:10px; border-radius:3px; display:inline-block;}
+  .bar-legend .lg-a{background:var(--red);}
+  .bar-legend .lg-b{background:var(--green);}
+
+  .bar-row{padding:14px 0; border-bottom:1px solid var(--border);}
+  .bar-row:last-child{border-bottom:none;}
+  .bar-row-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px;}
+  .bar-row-name{font-size:15px; font-weight:500; color:var(--text-primary);}
+  .bar-row-id{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--text-dim); margin-right:8px;}
+  .bar-delta{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; padding:2px 8px; border-radius:5px;}
+  .bar-delta.up{color:var(--green); background:rgba(79,174,130,0.14);}
+  .bar-delta.down{color:var(--red); background:rgba(217,97,79,0.14);}
+  .bar-delta.flat{color:var(--text-muted); background:rgba(139,149,172,0.10);}
+
+  .bar-track-wrap{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+  .bar-track-label{width:64px; flex-shrink:0; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.03em;}
+  .bar-track{flex:1; height:16px; background:var(--bg-panel-2); border-radius:4px; position:relative; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:4px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; min-width:34px;}
+  .bar-fill.a{background:linear-gradient(90deg,#a8382c,var(--red));}
+  .bar-fill.b{background:linear-gradient(90deg,#2f8f65,var(--green));}
+  .bar-fill-label{font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; color:#fff; white-space:nowrap;}
+
+  .callout{
+    display:flex; gap:14px; align-items:flex-start; background:rgba(217,97,79,0.08);
+    border:1px solid rgba(217,97,79,0.35); border-radius:10px; padding:16px 18px; margin-top:6px;
+  }
+  .callout .mark{
+    font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; color:var(--red);
+    background:rgba(217,97,79,0.15); border:1px solid rgba(217,97,79,0.4); border-radius:5px;
+    padding:3px 7px; flex-shrink:0; letter-spacing:0.04em;
+  }
+  .callout p{font-size:15px; color:var(--text-muted); line-height:1.55;}
+  .callout b{color:var(--text-primary); font-weight:600;}
+
+  /* ---- cross classifier heatmap ---- */
+  .heatmap{width:100%; border-collapse:collapse; font-family:'JetBrains Mono',monospace; font-size:14px;}
+  .heatmap th{
+    text-align:left; padding:10px 12px; color:var(--text-dim); font-weight:500; font-size:14px;
+    text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid var(--border);
+  }
+  .heatmap td{padding:10px 12px; border-bottom:1px solid var(--border); text-align:center;}
+  .heatmap td:first-child, .heatmap th:first-child{text-align:left; font-family:'Inter',sans-serif; font-weight:500; font-size:15px; color:var(--text-primary);}
+  .cell{border-radius:6px; padding:6px 8px; display:inline-block; min-width:56px; font-weight:600;}
+  .c-hi{background:rgba(79,174,130,0.16); color:var(--green);}
+  .c-mid{background:rgba(212,162,76,0.16); color:var(--gold);}
+  .c-lo{background:rgba(217,97,79,0.20); color:var(--red);}
+
+  /* ---- findings ---- */
+  .findings{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .find-card{background:var(--bg-panel); border:1px solid var(--border); border-radius:12px; padding:22px 24px;}
+  .find-card .fnum{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--gold); letter-spacing:0.06em; margin-bottom:10px;}
+  .find-card h4{font-family:'Space Grotesk',sans-serif; font-size:17.5px; margin-bottom:8px;}
+  .find-card p{font-size:15px; color:var(--text-muted);}
+
+  /* ---- secops ---- */
+  .secops{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  .secops-col{border-left:2px solid var(--border); padding-left:18px;}
+  .secops-col.a{border-color:var(--green);}
+  .secops-col.b{border-color:var(--blue);}
+  .secops-col.c{border-color:var(--gold);}
+  .secops-col h4{font-family:'Space Grotesk',sans-serif; font-size:16.5px; margin-bottom:12px;}
+  .secops-col ul{list-style:none;}
+  .secops-col li{font-size:17.5px; color:var(--text-muted); margin-bottom:11px; padding-left:14px; position:relative;}
+  .secops-col li::before{content:'—'; position:absolute; left:0; color:var(--text-dim);}
+  .secops-col li b{color:var(--text-primary); font-weight:500;}
+
+  /* ---- taxonomy matrix (signature element) ---- */
+  .matrix-wrap{background:var(--bg-panel); border:1px solid var(--border); border-radius:12px; overflow:hidden;}
+  .matrix-row{
+    display:grid; grid-template-columns:36px 1.3fr 1.3fr 1fr 96px; gap:14px; align-items:center;
+    padding:11px 20px; border-bottom:1px solid var(--border); font-size:17.5px;
+  }
+  .matrix-row:last-child{border-bottom:none;}
+  .matrix-row.head{
+    font-family:'JetBrains Mono',monospace; font-size:12px; text-transform:uppercase; color:var(--text-dim);
+    letter-spacing:0.06em; padding:12px 20px; background:var(--bg-panel-2);
+  }
+  .mid{font-family:'JetBrains Mono',monospace; color:var(--text-dim); font-size:17.5px;}
+  .mname{color:var(--text-primary); font-weight:500;}
+  .mname .arrow{color:var(--text-dim); margin:0 6px; font-weight:400;}
+  .mdef{color:var(--text-muted);}
+  .mbar-track{width:100%; height:6px; background:var(--bg-panel-2); border-radius:3px; overflow:hidden;}
+  .mbar-fill{height:100%; border-radius:3px; min-width:2px;}
+  .mval{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; text-align:right;}
+  .mval.up{color:var(--green);}
+  .mval.down{color:var(--red);}
+  .mval.flat{color:var(--text-dim);}
+  .mval.critical{font-size:17.5px;}
+
+  /* ---- footer / share card ---- */
+  footer{border-top:1px solid var(--border); padding:40px 0 0; margin-top:20px;}
+  .foot-grid{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:20px;}
+  .foot-note{font-size:14px; color:var(--text-dim); max-width:520px; line-height:1.6;}
+  .foot-brand{font-family:'JetBrains Mono',monospace; font-size:17.5px; color:var(--text-muted); text-align:right;}
+
+  @media(max-width:860px){
+    h1{font-size:40px;}
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .tm-grid, .findings, .secops{grid-template-columns:1fr;}
+    .matrix-row{grid-template-columns:32px 1fr; row-gap:4px;}
+    .matrix-row .mdef, .matrix-row .mbar-track{display:none;}
+    .wrap{padding:0 18px;}
+    .topbar{padding:18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="brand-dot"></span>AML · FRAUD DETECTION BENCHMARK</div>
+  <div class="topbar-right">github.com/aml-fraud-benchmark</div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Adversarial Machine Learning — Financial Fraud Detection</div>
+    <h1>20 attacks. 20 defenses.<br>One fraud model <span class="accent">under fire.</span></h1>
+    <p class="hero-sub">An empirical audit of decision-time evasion and training-data poisoning against a credit-card fraud detection model zoo — benchmarking robustness across four classifiers and two clustering models on a simulated 8,000-transaction dataset.</p>
+
+    <div class="stat-row">
+      <div class="stat"><div class="stat-num">20 / 20</div><div class="stat-label">Attacks &amp; Defenses</div></div>
+      <div class="stat"><div class="stat-num">6</div><div class="stat-label">Models Benchmarked</div></div>
+      <div class="stat"><div class="stat-num">8,000</div><div class="stat-label">Simulated Transactions</div></div>
+      <div class="stat"><div class="stat-num">5%</div><div class="stat-label">Baseline Fraud Rate</div></div>
+    </div>
+  </div>
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Two ways to break a fraud model</h2>
+      </div>
+    </div>
+    <div class="tm-grid">
+      <div class="tm-card evade">
+        <h3><span class="tm-tag"></span>Decision-time evasion</h3>
+        <p>The adversary perturbs a fraudulent transaction at inference time so the model misclassifies it as legitimate, while keeping the change financially plausible.</p>
+        <div class="formula">x_adv = x + δ &nbsp;s.t.&nbsp; f(x_adv) ≠ f(x), &nbsp;‖δ‖ₚ ≤ ε</div>
+        <div class="tm-meta">
+          <span><b>Goal:</b> fraud → legitimate</span>
+          <span><b>Knowledge:</b> white- to black-box</span>
+        </div>
+      </div>
+      <div class="tm-card poison">
+        <h3><span class="tm-tag"></span>Training-data poisoning</h3>
+        <p>The adversary injects corrupted samples into the training set, degrading the model — or planting a backdoor triggered by a specific pattern at inference.</p>
+        <div class="formula">D'_train = D_train ∪ D_p &nbsp;→&nbsp; f_θ'(x_t with T) = y_a</div>
+        <div class="tm-meta">
+          <span><b>Goal:</b> degrade or backdoor</span>
+          <span><b>Vector:</b> training pipeline</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Decision-time evasion vs. defense</h2>
+        <p class="section-desc">Attacks 1–8 against the MLP (deep net) classifier, before and after the matched defense is applied.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Attacked vs. Defended Accuracy — MLP Target</div>
+      <div class="panel-sub">Bars are drawn to true 0–100% scale. Exact values are printed on every bar — no truncated axis.</div>
+      <div class="bar-legend"><span><i class="lg-a"></i>Attacked</span><span><i class="lg-b"></i>Defended</span></div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">01</span>FGSM</div><div class="bar-delta up">+0.15 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Attacked</div><div class="bar-track"><div class="bar-fill a" style="width:99.75%;"><span class="bar-fill-label">99.75%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Defended</div><div class="bar-track"><div class="bar-fill b" style="width:99.9%;"><span class="bar-fill-label">99.90%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">02</span>PGD</div><div class="bar-delta up">+0.05 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Attacked</div><div class="bar-track"><div class="bar-fill a" style="width:99.9%;"><span class="bar-fill-label">99.90%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Defended</div><div class="bar-track"><div class="bar-fill b" style="width:99.85%;"><span class="bar-fill-label">99.85%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">03</span>C&amp;W L2</div><div class="bar-delta down">−2.35 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Attacked</div><div class="bar-track"><div class="bar-fill a" style="width:99.9%;"><span class="bar-fill-label">99.90%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Defended</div><div class="bar-track"><div class="bar-fill b" style="width:97.55%;"><span class="bar-fill-label">97.55%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">04</span>JSMA Saliency</div><div class="bar-delta flat">0.00 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Attacked</div><div class="bar-track"><div class="bar-fill a" style="width:94.8%;"><span class="bar-fill-label">94.80%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Defended</div><div class="bar-track"><div class="bar-fill b" style="width:94.8%;"><span class="bar-fill-label">94.80%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">05</span>HopSkipJump</div><div class="bar-delta flat">0.00 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Attacked</div><div class="bar-track"><div class="bar-fill a" style="width:99.75%;"><span class="bar-fill-label">99.75%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Defended</div><div class="bar-track"><div class="bar-fill b" style="width:99.75%;"><span class="bar-fill-label">99.75%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">06</span>Tree Split Perturbation</div><div class="bar-delta up">+0.05 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Attacked</div><div class="bar-track"><div class="bar-fill a" style="width:99.9%;"><span class="bar-fill-label">99.90%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Defended</div><div class="bar-track"><div class="bar-fill b" style="width:99.95%;"><span class="bar-fill-label">99.95%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">07</span>SVM Margin Crossing</div><div class="bar-delta up">+0.05 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Attacked</div><div class="bar-track"><div class="bar-fill a" style="width:99.8%;"><span class="bar-fill-label">99.80%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Defended</div><div class="bar-track"><div class="bar-fill b" style="width:99.85%;"><span class="bar-fill-label">99.85%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">08</span>Boundary Uniform Noise</div><div class="bar-delta down">−0.30 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Attacked</div><div class="bar-track"><div class="bar-fill a" style="width:99.8%;"><span class="bar-fill-label">99.80%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Defended</div><div class="bar-track"><div class="bar-fill b" style="width:99.5%;"><span class="bar-fill-label">99.50%</span></div></div></div>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="mark">OBSERVATION</span>
+      <p><b>Defensive distillation underperformed on the C&amp;W attack</b> — accuracy fell from 99.9% to 97.6% post-defense, and gradient masking left the JSMA saliency attack completely unmitigated (94.8% → 94.8%), suggesting these two defenses need re-tuning before production use.</p>
+    </div>
+  </section>
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Training-data poisoning vs. sanitization</h2>
+        <p class="section-desc">Attacks 11–20 against the MLP classifier, before and after the matched sanitization defense.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Poisoned vs. Sanitized Accuracy — MLP Target</div>
+      <div class="panel-sub">Bars are drawn to true 0–100% scale. Exact values are printed on every bar — no truncated axis.</div>
+      <div class="bar-legend"><span><i class="lg-a"></i>Poisoned</span><span><i class="lg-b"></i>Sanitized</span></div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">11</span>Clean-Label Backdoor</div><div class="bar-delta down">−0.10 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:99.9%;"><span class="bar-fill-label">99.90%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:99.8%;"><span class="bar-fill-label">99.80%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">12</span>Label Flipping</div><div class="bar-delta down">−0.15 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:99.95%;"><span class="bar-fill-label">99.95%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:99.8%;"><span class="bar-fill-label">99.80%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">13</span>Gradient-Matching</div><div class="bar-delta up">+0.20 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:98.65%;"><span class="bar-fill-label">98.65%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:98.85%;"><span class="bar-fill-label">98.85%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">14</span>Bulls-eye Polytope</div><div class="bar-delta down">−0.45 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:99.9%;"><span class="bar-fill-label">99.90%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:99.45%;"><span class="bar-fill-label">99.45%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">15</span>Latent Feature Collision</div><div class="bar-delta flat">0.00 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:100%;"><span class="bar-fill-label">100.00%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:100%;"><span class="bar-fill-label">100.00%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">16</span>K-Means Centroid Drag</div><div class="bar-delta up">+0.10 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:99.85%;"><span class="bar-fill-label">99.85%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:99.95%;"><span class="bar-fill-label">99.95%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">17</span>DBSCAN Density Bridge</div><div class="bar-delta down">−94.90 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:99.9%;"><span class="bar-fill-label">99.90%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:5%;"><span class="bar-fill-label">5.00%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">18</span>Logistic Gradient Poisoning</div><div class="bar-delta up">+1.45 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:98.55%;"><span class="bar-fill-label">98.55%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:100%;"><span class="bar-fill-label">100.00%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">19</span>Latent Anomaly Injection</div><div class="bar-delta flat">0.00 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:100%;"><span class="bar-fill-label">100.00%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:100%;"><span class="bar-fill-label">100.00%</span></div></div></div>
+      </div>
+
+      <div class="bar-row">
+        <div class="bar-row-head"><div class="bar-row-name"><span class="bar-row-id">20</span>Availability / DoS Poisoning</div><div class="bar-delta flat">0.00 pp</div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Poisoned</div><div class="bar-track"><div class="bar-fill a" style="width:100%;"><span class="bar-fill-label">100.00%</span></div></div></div>
+        <div class="bar-track-wrap"><div class="bar-track-label">Sanitized</div><div class="bar-track"><div class="bar-fill b" style="width:100%;"><span class="bar-fill-label">100.00%</span></div></div></div>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="mark">CRITICAL</span>
+      <p><b>DBSCAN Noise Elimination (Defense 17) collapsed accuracy to 5%</b> after the DBSCAN Density Bridge attack (99.9% poisoned accuracy) — the sanitization step is over-aggressively discarding legitimate samples as noise. This is a fail-open risk: the "defense" is more damaging than the attack it targets, and should be blocked from any production rollout pending a fix.</p>
+    </div>
+  </section>
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Cross-classifier robustness matrix</h2>
+        <p class="section-desc">Four classifiers compared across clean baseline, evasion attacks, 20% label-flip poisoning, and both sanitization strategies.</p>
+      </div>
+    </div>
+    <div class="panel" style="overflow-x:auto;">
+      <table class="heatmap">
+        <tr>
+          <th>Classifier</th><th>Clean</th><th>FGSM</th><th>PGD</th><th>Poisoned (20% LF)</th><th>Sanitized (K-Means)</th><th>Sanitized (DBSCAN)</th>
+        </tr>
+        <tr>
+          <td>Logistic Regression</td>
+          <td><span class="cell c-hi">100.0%</span></td><td><span class="cell c-hi">99.95%</span></td><td><span class="cell c-hi">100.0%</span></td>
+          <td><span class="cell c-hi">98.2%</span></td><td><span class="cell c-hi">98.25%</span></td><td><span class="cell c-lo">5.0%</span></td>
+        </tr>
+        <tr>
+          <td>SVM (RBF)</td>
+          <td><span class="cell c-hi">100.0%</span></td><td><span class="cell c-hi">100.0%</span></td><td><span class="cell c-hi">100.0%</span></td>
+          <td><span class="cell c-hi">99.65%</span></td><td><span class="cell c-hi">99.65%</span></td><td><span class="cell c-lo">5.0%</span></td>
+        </tr>
+        <tr>
+          <td>Random Forest</td>
+          <td><span class="cell c-hi">100.0%</span></td><td><span class="cell c-hi">100.0%</span></td><td><span class="cell c-hi">100.0%</span></td>
+          <td><span class="cell c-hi">99.0%</span></td><td><span class="cell c-hi">98.75%</span></td><td><span class="cell c-mid">25.35%</span></td>
+        </tr>
+        <tr>
+          <td>MLP (Deep Net)</td>
+          <td><span class="cell c-hi">99.9%</span></td><td><span class="cell c-hi">99.95%</span></td><td><span class="cell c-hi">99.9%</span></td>
+          <td><span class="cell c-hi">98.8%</span></td><td><span class="cell c-hi">98.7%</span></td><td><span class="cell c-mid">44.35%</span></td>
+        </tr>
+      </table>
+    </div>
+  </section>
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Empirical robustness findings</h2>
+      </div>
+    </div>
+    <div class="findings">
+      <div class="find-card">
+        <div class="fnum">FINDING 01</div>
+        <h4>MLP &amp; SVM run more sensitive</h4>
+        <p>Both models are the most exposed to gradient-based and margin-based perturbations — their smooth, high-dimensional decision boundaries are easier to nudge across.</p>
+      </div>
+      <div class="find-card">
+        <div class="fnum">FINDING 02</div>
+        <h4>Random Forest is the most resilient</h4>
+        <p>Ensemble averaging over many threshold-based trees makes it harder to find one perturbation that fools every tree at once — consistently the top performer under attack.</p>
+      </div>
+      <div class="find-card">
+        <div class="fnum">FINDING 03</div>
+        <h4>Sanitization can be its own risk</h4>
+        <p>The DBSCAN-based defense demonstrates that a poorly-tuned "cure" can be worse than the disease — accuracy loss from the defense itself, not the attack.</p>
+      </div>
+    </div>
+  </section>
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Production guidelines &amp; latency trade-offs</h2>
+      </div>
+    </div>
+    <div class="secops">
+      <div class="secops-col a">
+        <h4>Real-time inference</h4>
+        <ul>
+          <li><b>Feature squeezing / clipping</b> — fast, low latency, effective against small perturbations.</li>
+          <li><b>Randomized smoothing</b> — certified robustness, but adds meaningful latency; reserve for high-assurance paths.</li>
+          <li>Monitor live prediction distributions for sudden shifts.</li>
+        </ul>
+      </div>
+      <div class="secops-col b">
+        <h4>Retraining &amp; data integrity</h4>
+        <ul>
+          <li><b>Loss-based outlier detection</b> — flag disproportionately high-loss samples offline.</li>
+          <li><b>K-NN consistency / Isolation Forest scrubbing</b> — batch-only, too slow for real-time, but strong pre-training filters.</li>
+          <li>Version and lineage-track every model for fast rollback.</li>
+        </ul>
+      </div>
+      <div class="secops-col c">
+        <h4>Latency trade-offs</h4>
+        <ul>
+          <li><b>High-throughput systems</b> — favor simple defenses plus robust architectures like Random Forest.</li>
+          <li><b>High-assurance, low-throughput</b> — afford heavier defenses like randomized smoothing.</li>
+          <li><b>Two-tier routing</b> — fast first pass, async deep check on flagged transactions.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Attack ↔ defense reference matrix</h2>
+        <p class="section-desc">All 20 attack/defense pairs, ordered by ID. Bar shows the accuracy delta after the defense was applied.</p>
+      </div>
+    </div>
+    <div class="matrix-wrap">
+      <div class="matrix-row head"><div>ID</div><div>Attack</div><div>Defense</div><div>Δ Scale (true)</div><div>Δ Accuracy</div></div>
+      <div class="matrix-row"><div class="mid">01</div><div class="mname">FGSM<span class="arrow">→</span></div><div class="mdef">Adversarial Retraining</div><div class="mbar-track"><div class="mbar-fill" style="width:0.15%; background:#4fae82;"></div></div><div class="mval up">+0.15pp</div></div>
+      <div class="matrix-row"><div class="mid">02</div><div class="mname">PGD<span class="arrow">→</span></div><div class="mdef">Feature Squeezing</div><div class="mbar-track"><div class="mbar-fill" style="width:0.05%; background:#4fae82;"></div></div><div class="mval up">+0.05pp</div></div>
+      <div class="matrix-row"><div class="mid">03</div><div class="mname">C&amp;W L2<span class="arrow">→</span></div><div class="mdef">Defensive Distillation</div><div class="mbar-track"><div class="mbar-fill" style="width:2.35%; background:#d9614f;"></div></div><div class="mval down">−2.35pp</div></div>
+      <div class="matrix-row"><div class="mid">04</div><div class="mname">JSMA Saliency<span class="arrow">→</span></div><div class="mdef">Gradient Masking</div><div class="mbar-track"><div class="mbar-fill" style="width:0.3%; background:#8b95ac;"></div></div><div class="mval flat">0.00pp</div></div>
+      <div class="matrix-row"><div class="mid">05</div><div class="mname">HopSkipJump<span class="arrow">→</span></div><div class="mdef">Randomized Smoothing</div><div class="mbar-track"><div class="mbar-fill" style="width:0.3%; background:#8b95ac;"></div></div><div class="mval flat">0.00pp</div></div>
+      <div class="matrix-row"><div class="mid">06</div><div class="mname">Tree Split Perturbation<span class="arrow">→</span></div><div class="mdef">Robust Tree Squeezing</div><div class="mbar-track"><div class="mbar-fill" style="width:0.05%; background:#4fae82;"></div></div><div class="mval up">+0.05pp</div></div>
+      <div class="matrix-row"><div class="mid">07</div><div class="mname">SVM Margin Crossing<span class="arrow">→</span></div><div class="mdef">SVM Margin Regularization</div><div class="mbar-track"><div class="mbar-fill" style="width:0.05%; background:#4fae82;"></div></div><div class="mval up">+0.05pp</div></div>
+      <div class="matrix-row"><div class="mid">08</div><div class="mname">Boundary Uniform Noise<span class="arrow">→</span></div><div class="mdef">Denoising Filter</div><div class="mbar-track"><div class="mbar-fill" style="width:0.3%; background:#d9614f;"></div></div><div class="mval down">−0.30pp</div></div>
+      <div class="matrix-row"><div class="mid">11</div><div class="mname">Clean-Label Backdoor<span class="arrow">→</span></div><div class="mdef">SPECTRE Clustering (sim.)</div><div class="mbar-track"><div class="mbar-fill" style="width:0.1%; background:#d9614f;"></div></div><div class="mval down">−0.10pp</div></div>
+      <div class="matrix-row"><div class="mid">12</div><div class="mname">Label Flipping<span class="arrow">→</span></div><div class="mdef">K-NN Label Consistency</div><div class="mbar-track"><div class="mbar-fill" style="width:0.15%; background:#d9614f;"></div></div><div class="mval down">−0.15pp</div></div>
+      <div class="matrix-row"><div class="mid">13</div><div class="mname">Gradient-Matching<span class="arrow">→</span></div><div class="mdef">DP-SGD Bound (sim.)</div><div class="mbar-track"><div class="mbar-fill" style="width:0.2%; background:#4fae82;"></div></div><div class="mval up">+0.20pp</div></div>
+      <div class="matrix-row"><div class="mid">14</div><div class="mname">Bulls-eye Polytope<span class="arrow">→</span></div><div class="mdef">Loss-Based Outlier San.</div><div class="mbar-track"><div class="mbar-fill" style="width:0.45%; background:#d9614f;"></div></div><div class="mval down">−0.45pp</div></div>
+      <div class="matrix-row"><div class="mid">15</div><div class="mname">Latent Feature Collision<span class="arrow">→</span></div><div class="mdef">STRIP Entropy Verif. (sim.)</div><div class="mbar-track"><div class="mbar-fill" style="width:0.3%; background:#8b95ac;"></div></div><div class="mval flat">0.00pp</div></div>
+      <div class="matrix-row"><div class="mid">16</div><div class="mname">K-Means Centroid Drag<span class="arrow">→</span></div><div class="mdef">K-Means Distance Filtering</div><div class="mbar-track"><div class="mbar-fill" style="width:0.1%; background:#4fae82;"></div></div><div class="mval up">+0.10pp</div></div>
+      <div class="matrix-row"><div class="mid">17</div><div class="mname">DBSCAN Density Bridge<span class="arrow">→</span></div><div class="mdef">DBSCAN Noise Elimination</div><div class="mbar-track"><div class="mbar-fill" style="width:94.9%; background:#d9614f;"></div></div><div class="mval down critical">−94.90pp</div></div>
+      <div class="matrix-row"><div class="mid">18</div><div class="mname">Logistic Gradient Poisoning<span class="arrow">→</span></div><div class="mdef">Huber Loss Residual Filter</div><div class="mbar-track"><div class="mbar-fill" style="width:1.45%; background:#4fae82;"></div></div><div class="mval up">+1.45pp</div></div>
+      <div class="matrix-row"><div class="mid">19</div><div class="mname">Latent Anomaly Injection<span class="arrow">→</span></div><div class="mdef">Isolation Forest Scrubbing</div><div class="mbar-track"><div class="mbar-fill" style="width:0.3%; background:#8b95ac;"></div></div><div class="mval flat">0.00pp</div></div>
+      <div class="matrix-row"><div class="mid">20</div><div class="mname">Availability / DoS Poisoning<span class="arrow">→</span></div><div class="mdef">RONI Batch Exclusion (sim.)</div><div class="mbar-track"><div class="mbar-fill" style="width:0.3%; background:#8b95ac;"></div></div><div class="mval flat">0.00pp</div></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot-grid">
+      <div class="foot-note">Dataset is a synthetic, PCA-formatted credit-card transaction set (V1–V28, Amount, Class) generated for benchmarking purposes — not real cardholder data. Full methodology, code, and per-attack mathematics available in the source notebook.</div>
+      <div class="foot-brand">ADVERSARIAL ML BENCHMARK</div>
+    </div>
+  </footer>
+
+</div>
+
+
+
+</body>
+</html>

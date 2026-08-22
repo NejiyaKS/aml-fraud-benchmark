@@ -61,7 +61,7 @@ An empirical audit of decision-time evasion and training-data poisoning against 
 ## 📁 Repository Structure
 
 ```text
-├── aml_fraud_dashboard.html   # Standalone interactive dashboard
-├──Adversarial_ML_CIA3_Report  # Report 
 ├──AML_CIA3_2548535.ipynb # Attack generation, training pipelines & evaluations
+├──aml_fraud_dashboard.html   # Standalone interactive dashboard
+├──Adversarial_ML_CIA3_Report  # Report 
 └── README.md                  # Project overview and benchmark results
